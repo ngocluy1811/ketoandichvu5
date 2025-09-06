@@ -1634,12 +1634,40 @@
         .form-group select {
             width: 100%;
             padding: 1rem;
-            background: rgba(248, 250, 252, 0.05);
-            border: 1px solid var(--border);
+            background: rgba(248, 250, 252, 0.95);
+            border: 2px solid var(--border);
             border-radius: var(--border-radius);
-            color: var(--text-primary);
+            color: #1e293b;
             font-size: 1rem;
             transition: var(--transition);
+        }
+
+        /* ĐẶC BIỆT CHO INPUT VÀ TEXTAREA - MÀU CHỮ ĐEN RÕ RÀNG */
+        .form-group input,
+        .form-group textarea {
+            background: rgba(255, 255, 255, 0.98);
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: #64748b;
+        }
+
+        /* ĐẶC BIỆT CHO SELECT - MÀU SẮC RÕ RÀNG HƠN */
+        .form-group select {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #e2e8f0;
+            color: #1e293b;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .form-group select option {
+            background: white;
+            color: #1e293b;
+            padding: 0.5rem;
         }
 
         .form-group input:focus,
@@ -1648,6 +1676,7 @@
             outline: none;
             border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: rgba(255, 255, 255, 1);
         }
 
         .submit-btn {
@@ -2712,6 +2741,594 @@
     </div>
 
     <script>
+        // Gmail Email Service - Email Configuration từ index3.html
+        class GmailEmailService {
+            constructor() {
+                // ⚠️ CẬP NHẬT CÁC ID NÀY TỪ EMAILJS.COM
+                this.publicKey = 'ykYWgwoy3W3vMUM0o'; // Từ EmailJS Dashboard > Integration
+                this.serviceId = 'service_qx9b3pr'; // Từ EmailJS Dashboard > Services
+                this.templateId = 'template_dmkgqmk'; // Từ EmailJS Dashboard > Templates
+                
+                // Thông tin Gmail - ĐẢM BẢO GỬI ĐẾN ĐÚNG EMAIL
+                this.fromEmail = 'vongocluy12345@gmail.com';
+                this.toEmail = 'thutrang.orient@gmail.com'; // EMAIL NHẬN THÔNG BÁO
+                this.appPassword = 'lwgk lwec jkms wvds'; // App Password từ index3.html
+                
+                this.init();
+                console.log('✅ Email Service khởi tạo - Gửi đến:', this.toEmail);
+                console.log('🔧 EmailJS Config:', {
+                    publicKey: this.publicKey,
+                    serviceId: this.serviceId, 
+                    templateId: this.templateId
+                });
+            }
+
+            init() {
+                // Initialize EmailJS với public key
+                if (typeof emailjs !== 'undefined') {
+                    emailjs.init(this.publicKey);
+                    console.log('✅ EmailJS đã được khởi tạo');
+                } else {
+                    console.warn('⚠️ EmailJS chưa được load');
+                }
+            }
+
+            async sendEmail(formData) {
+                console.log('🚀 Bắt đầu gửi email thông báo khách hàng mới...');
+                console.log('📧 Email nhận:', this.toEmail);
+                console.log('👤 Thông tin khách hàng:', formData);
+
+                // CHUYỂN ĐỔI TÊN DỊCH VỤ CHUẨN (KHÔNG VIẾT TẮT)
+                const getServiceFullName = (serviceValue) => {
+                    const serviceMap = {
+                        'ketoan-tonghop': 'Kế Toán Tổng Hợp',
+                        'baocao-taichinh': 'Báo Cáo Tài Chính',
+                        'tuvan-thue': 'Tư Vấn Thuế',
+                        'quanly-taichinh': 'Quản Lý Tài Chính'
+                    };
+                    return serviceMap[serviceValue] || serviceValue;
+                };
+                
+                const serviceFullName = getServiceFullName(formData.service);
+                console.log('🎯 Dịch vụ đầy đủ:', serviceFullName);
+
+                // Chuẩn bị template parameters CHO THÔNG BÁO ĐẾN THUTRANG.ORIENT@GMAIL.COM
+                const templateParams = {
+                    // ĐỊA CHỈ EMAIL NHẬN - QUAN TRỌNG!
+                    to_name: 'Thu Trang',
+                    to_email: 'thutrang.orient@gmail.com',
+                    
+                    // THÔNG TIN NGƯỜI GỬI - HIỂN THỊ ĐẦY ĐỦ TÊN
+                    from_name: `${formData.name} - Khách hàng mới từ Website`,
+                    from_email: formData.email,
+                    reply_to: formData.email,
+                    
+                    // CHI TIẾT KHÁCH HÀNG CẦN TƯ VẤN
+                    customer_name: formData.name,
+                    customer_email: formData.email,
+                    customer_phone: formData.phone,
+                    customer_company: formData.company || 'Không có thông tin',
+                    service_requested: serviceFullName, // SỬ DỤNG TÊN DỊCH VỤ ĐẦY ĐỦ
+                    customer_message: formData.message,
+                    
+                    // THÔNG TIN THỜI GIAN
+                    notification_time: new Date().toLocaleString('vi-VN', {
+                        timeZone: 'Asia/Ho_Chi_Minh',
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }),
+                    
+                    // TIÊU ĐỀ EMAIL - HIỂN THỊ ĐẦY ĐỦ THÔNG TIN
+                    subject: `🔔 THÔNG BÁO KHÁCH HÀNG MỚI - ${serviceFullName}`,
+                    email_subject: `🔔 THÔNG BÁO KHÁCH HÀNG MỚI - ${serviceFullName}`,
+                    
+                    // NỘI DUNG EMAIL ĐẦY ĐỦ
+                    message: `
+🚨 THÔNG BÁO KHẨN CẤP - KHÁCH HÀNG MỚI CẦN TƯ VẤN 🚨
+
+📋 THÔNG TIN CHI TIẾT KHÁCH HÀNG:
+
+👤 Họ và tên: ${formData.name}
+📧 Email liên hệ: ${formData.email}
+📱 Số điện thoại: ${formData.phone}
+🏢 Công ty: ${formData.company || 'Không có thông tin'}
+🎯 Dịch vụ quan tâm: ${serviceFullName}
+
+💬 NHU CẦU CỤ THỂ:
+"${formData.message}"
+
+🕐 Thời gian gửi: ${new Date().toLocaleString('vi-VN')}
+
+🚀 HÀNH ĐỘNG CẦN LÀM NGAY:
+📞 Gọi điện: ${formData.phone}
+📧 Trả lời email: ${formData.email}
+💬 Chat Zalo: https://zalo.me/0937739771
+
+⚠️ VUI LÒNG LIÊN HỆ TRONG VÒNG 2 GIỜ ĐỂ KHÔNG BỎ LỠ KHÁCH HÀNG!
+
+---
+Tin nhắn tự động từ website Thu Trang Accounting
+                    `
+                };
+
+                try {
+                    console.log('📤 Đang gửi email qua EmailJS...');
+                    console.log('🎯 Force gửi đến:', 'thutrang.orient@gmail.com');
+                    
+                    // Method 1: EmailJS với force recipient
+                    if (typeof emailjs !== 'undefined') {
+                        // FORCE GỬI ĐẾN ĐÚNG EMAIL
+                        const emailParams = {
+                            ...templateParams,
+                            to_email: 'thutrang.orient@gmail.com', // FORCE TARGET EMAIL
+                            to_name: 'Thu Trang'
+                        };
+                        
+                        console.log('📋 Template Params:', emailParams);
+                        
+                        const response = await emailjs.send(
+                            this.serviceId,
+                            this.templateId,
+                            emailParams
+                        );
+                        
+                        console.log('✅ EmailJS gửi thành công:', response);
+                        return { success: true, response, method: 'EmailJS' };
+                    } else {
+                        throw new Error('EmailJS not loaded');
+                    }
+                } catch (error) {
+                    console.error('❌ EmailJS lỗi:', error);
+                    
+                    // Method 2: Fallback - SMTP.js với Gmail SMTP trực tiếp
+                    try {
+                        console.log('📤 Thử gửi qua SMTP.js...');
+                        
+                        if (typeof Email !== 'undefined') {
+                            const result = await Email.send({
+                                Host: "smtp.gmail.com",
+                                Username: this.fromEmail,
+                                Password: this.appPassword,
+                                To: this.toEmail, // ĐÚNG EMAIL NHẬN
+                                From: this.fromEmail,
+                                Subject: templateParams.email_subject,
+                                Body: templateParams.email_body
+                            });
+                            
+                            console.log('✅ SMTP.js gửi thành công:', result);
+                            return { success: true, response: result, method: 'SMTP.js' };
+                        } else {
+                            throw new Error('SMTP.js not loaded');
+                        }
+                    } catch (smtpError) {
+                        console.error('❌ SMTP lỗi:', smtpError);
+                        
+                        // Method 3: Mailto fallback - QUAN TRỌNG!
+                        console.log('📤 Fallback: Mở mailto...');
+                        return this.sendViaMailto(formData);
+                    }
+                }
+            }
+
+            formatNotificationEmail(formData) {
+                const currentTime = new Date().toLocaleString('vi-VN');
+                
+                return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
+        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #28a745, #20c997); padding: 30px; text-align: center; color: white; }
+        .urgent { background: #dc3545; color: white; padding: 10px; text-align: center; font-weight: bold; font-size: 18px; }
+        .content { padding: 30px; }
+        .customer-info { background: #fff3cd; border-left: 4px solid #ffc107; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .info-table td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+        .label { font-weight: bold; color: #555; width: 30%; background: #f8f9fa; }
+        .value { color: #333; }
+        .highlight { background: #28a745; color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+        .urgent-text { color: #dc3545; font-weight: bold; font-size: 16px; }
+        .actions { margin-top: 30px; padding: 25px; background: #e8f5e8; border-radius: 10px; border: 2px solid #28a745; }
+        .btn { display: inline-block; padding: 15px 25px; margin: 8px; border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 16px; }
+        .btn-primary { background: #28a745; color: white; }
+        .btn-secondary { background: #007bff; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="urgent">
+            🚨 THÔNG BÁO KHẨN CẤP - KHÁCH HÀNG MỚI CẦN TƯ VẤN 🚨
+        </div>
+        
+        <div class="header">
+            <h1>📞 KHÁCH HÀNG MỚI LIÊN HỆ</h1>
+            <p>Website Thu Trang Accounting</p>
+            <p style="font-size: 18px; font-weight: bold;">⏰ ${currentTime}</p>
+        </div>
+        
+        <div class="content">
+            <div class="customer-info">
+                <h3 style="margin-top: 0; color: #856404;">⚡ KHÁCH HÀNG CẦN LIÊN HỆ NGAY!</h3>
+                <p class="urgent-text">Vui lòng liên hệ lại trong vòng 2 giờ để không bỏ lỡ khách hàng tiềm năng!</p>
+            </div>
+            
+            <h2 style="color: #333; border-bottom: 3px solid #28a745; padding-bottom: 10px;">📋 THÔNG TIN CHI TIẾT KHÁCH HÀNG</h2>
+            
+            <table class="info-table">
+                <tr>
+                    <td class="label">👤 Họ và Tên:</td>
+                    <td class="value"><strong style="font-size: 18px; color: #28a745;">${formData.name}</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">📧 Email Liên Hệ:</td>
+                    <td class="value">
+                        <a href="mailto:${formData.email}" style="color: #007bff; font-weight: bold; font-size: 16px;">${formData.email}</a>
+                        <br><small style="color: #666;">👆 Click để trả lời email</small>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">📱 Số Điện Thoại:</td>
+                    <td class="value">
+                        <a href="tel:${formData.phone}" style="color: #28a745; font-weight: bold; font-size: 18px;">${formData.phone}</a>
+                        <br><small style="color: #666;">👆 Click để gọi ngay</small>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">🏢 Công Ty:</td>
+                    <td class="value"><strong>${formData.company || 'Không có thông tin'}</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">🎯 Dịch Vụ Quan Tâm:</td>
+                    <td class="value"><span class="highlight">${formData.service}</span></td>
+                </tr>
+                <tr>
+                    <td class="label">💬 Nhu Cầu Cụ Thể:</td>
+                    <td class="value" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <em>"${formData.message}"</em>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">🕐 Thời Gian Gửi:</td>
+                    <td class="value"><strong style="color: #dc3545;">${currentTime}</strong></td>
+                </tr>
+            </table>
+            
+            <div class="actions">
+                <h3 style="margin-top: 0; color: #155724;">🚀 HÀNH ĐỘNG CẦN LÀM NGAY:</h3>
+                <div style="text-align: center;">
+                    <a href="tel:${formData.phone}" class="btn btn-primary">📞 GỌI NGAY ${formData.phone}</a>
+                    <a href="mailto:${formData.email}?subject=Re: Tư vấn ${formData.service}&body=Chào ${formData.name}, cảm ơn bạn đã liên hệ..." class="btn btn-secondary">✉️ TRẢ LỜI EMAIL</a>
+                    <a href="https://zalo.me/0937739771" class="btn btn-info" target="_blank">💬 CHAT ZALO</a>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 8px; border: 1px solid #dee2e6;">
+                    <h4 style="margin-top: 0; color: #495057;">📝 GHI CHÚ QUAN TRỌNG:</h4>
+                    <ul style="color: #495057;">
+                        <li><strong>Ưu tiên gọi điện</strong> trong 2 giờ đầu</li>
+                        <li><strong>Chuẩn bị tư liệu</strong> về dịch vụ: ${formData.service}</li>
+                        <li><strong>Lưu thông tin</strong> khách hàng vào hệ thống CRM</li>
+                        <li><strong>Follow up</strong> sau 24h nếu chưa liên lạc được</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Hệ thống thông báo tự động - Website Thu Trang Accounting</strong></p>
+            <p>📧 Đây là email tự động từ form liên hệ trên website</p>
+            <p>🔄 Email này được gửi đến: <strong>thutrang.orient@gmail.com</strong></p>
+        </div>
+    </div>
+</body>
+</html>
+                `;
+            }
+
+            sendViaMailto(formData) {
+                const subject = `🔔 KHÁCH HÀNG MỚI CẦN TƯ VẤN - ${formData.service}`;
+                const body = `
+🚨 THÔNG BÁO KHẨN CẤP - KHÁCH HÀNG MỚI 🚨
+
+📋 THÔNG TIN KHÁCH HÀNG CẦN LIÊN HỆ NGAY:
+
+👤 Họ và tên: ${formData.name}
+📧 Email: ${formData.email}
+📱 Số điện thoại: ${formData.phone}
+🏢 Công ty: ${formData.company || 'Không có'}
+🎯 Dịch vụ quan tâm: ${formData.service}
+💬 Nhu cầu cụ thể: ${formData.message}
+🕐 Thời gian: ${new Date().toLocaleString('vi-VN')}
+
+🚀 HÀNH ĐỘNG CẦN LÀM:
+📞 GỌI NGAY: ${formData.phone}
+📧 EMAIL: ${formData.email}
+💬 ZALO: https://zalo.me/0937739771
+
+⚠️ VUI LÒNG LIÊN HỆ TRONG VÒNG 2 GIỜ!
+                `;
+                
+                // FORCE GỬI ĐẾN ĐÚNG EMAIL
+                const correctEmail = 'thutrang.orient@gmail.com';
+                const mailtoLink = `mailto:${correctEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                window.open(mailtoLink, '_blank');
+                
+                console.log('📧 Đã mở mailto đến:', correctEmail);
+                
+                return { 
+                    success: true, 
+                    method: 'mailto',
+                    message: 'Email client opened for notification to ' + correctEmail
+                };
+            }
+
+            // THÊM PHƯƠNG PHÁP DIRECT SEND
+            async sendDirectEmail(formData) {
+                console.log('🚀 Thử gửi email trực tiếp đến thutrang.orient@gmail.com');
+                
+                // Tạo form ẩn để submit trực tiếp
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'mailto:thutrang.orient@gmail.com';
+                form.style.display = 'none';
+                
+                const subjectField = document.createElement('input');
+                subjectField.name = 'subject';
+                subjectField.value = `🔔 KHÁCH HÀNG MỚI - ${formData.name} - ${formData.service}`;
+                
+                const bodyField = document.createElement('textarea');
+                bodyField.name = 'body';
+                bodyField.value = `
+THÔNG BÁO KHẨN CẤP - KHÁCH HÀNG MỚI
+
+Tên: ${formData.name}
+Email: ${formData.email}  
+Phone: ${formData.phone}
+Công ty: ${formData.company || 'N/A'}
+Dịch vụ: ${formData.service}
+Tin nhắn: ${formData.message}
+
+Thời gian: ${new Date().toLocaleString('vi-VN')}
+                `;
+                
+                form.appendChild(subjectField);
+                form.appendChild(bodyField);
+                document.body.appendChild(form);
+                
+                form.submit();
+                form.remove();
+                
+                return { success: true, method: 'direct-mailto' };
+            }
+        }
+
+        // Initialize Email Service
+        window.emailService = new GmailEmailService();
+
+        // Form Submission Handler - GỬI EMAIL THÔNG BÁO (FIX DUPLICATE)
+        document.addEventListener('DOMContentLoaded', function() {
+            const contactForm = document.getElementById('contactForm');
+            let isSubmitting = false; // Flag để tránh gửi lặp lại
+            
+            if (contactForm) {
+                contactForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    // Kiểm tra xem đang gửi hay không
+                    if (isSubmitting) {
+                        console.log('⚠️ Đang gửi email, vui lòng chờ...');
+                        return;
+                    }
+                    
+                    isSubmitting = true;
+                    console.log('📝 Form được submit...');
+                    
+                    // Lấy dữ liệu từ form
+                    const formData = {
+                        name: document.getElementById('name').value.trim(),
+                        email: document.getElementById('email').value.trim(),
+                        phone: document.getElementById('phone').value.trim(),
+                        company: document.getElementById('company').value.trim(),
+                        service: document.getElementById('service').value,
+                        message: document.getElementById('message').value.trim()
+                    };
+                    
+                    // Validate dữ liệu
+                    if (!formData.name || !formData.email || !formData.message) {
+                        alert('⚠️ Vui lòng điền đầy đủ thông tin bắt buộc!');
+                        isSubmitting = false; // Reset flag
+                        return;
+                    }
+                    
+                    // Hiển thị loading
+                    const submitBtn = contactForm.querySelector('.submit-btn');
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+                    submitBtn.disabled = true;
+                    
+                    try {
+                        console.log('🚀 Bắt đầu gửi email thông báo (1 lần duy nhất)...');
+                        
+                        // Gửi email thông báo đến thutrang.orient@gmail.com
+                        const result = await window.emailService.sendEmail(formData);
+                        
+                        if (result.success) {
+                            console.log('✅ Gửi email thành công:', result);
+                            
+                            // Hiển thị thông báo thành công
+                            showSuccessModal(formData);
+                            
+                            // Reset form
+                            contactForm.reset();
+                            
+                        } else {
+                            throw new Error('Email sending failed');
+                        }
+                        
+                    } catch (error) {
+                        console.error('❌ Lỗi gửi email:', error);
+                        alert('❌ Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại hoặc liên hệ trực tiếp qua Zalo: 0937 739 771');
+                    } finally {
+                        // Khôi phục button và reset flag
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                        isSubmitting = false; // Reset flag
+                    }
+                });
+            }
+        });
+
+        // Hiển thị modal thành công
+        function showSuccessModal(formData) {
+            // Tạo modal thành công
+            const modal = document.createElement('div');
+            modal.className = 'success-modal';
+            modal.innerHTML = `
+                <div class="success-modal-content">
+                    <div class="success-header">
+                        <i class="fas fa-check-circle"></i>
+                        <h2>Gửi Thành Công!</h2>
+                    </div>
+                    <div class="success-body">
+                        <p><strong>Cảm ơn ${formData.name}!</strong></p>
+                        <p>Chúng tôi đã nhận được yêu cầu tư vấn của bạn.</p>
+                        <p>📧 Email thông báo đã được gửi đến Thu Trang</p>
+                        <p>⏰ Chúng tôi sẽ liên hệ với bạn trong vòng <strong>24 giờ</strong></p>
+                        
+                        <div class="contact-options">
+                            <h4>Hoặc liên hệ ngay:</h4>
+                            <a href="tel:0937739771" class="contact-btn btn-phone">
+                                <i class="fas fa-phone"></i> 0937 739 771
+                            </a>
+                            <a href="https://zalo.me/0937739771" class="contact-btn btn-zalo" target="_blank">
+                                <i class="fab fa-facebook-messenger"></i> Chat Zalo
+                            </a>
+                            <a href="mailto:thutrang.orient@gmail.com" class="contact-btn btn-email">
+                                <i class="fas fa-envelope"></i> Email
+                            </a>
+                        </div>
+                    </div>
+                    <button class="close-modal" onclick="closeSuccessModal()">
+                        <i class="fas fa-times"></i> Đóng
+                    </button>
+                </div>
+            `;
+            
+            // Thêm CSS cho modal
+            const style = document.createElement('style');
+            style.textContent = `
+                .success-modal {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.8);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                    animation: fadeIn 0.3s ease;
+                }
+                .success-modal-content {
+                    background: white;
+                    border-radius: 15px;
+                    padding: 30px;
+                    max-width: 500px;
+                    width: 90%;
+                    text-align: center;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                    animation: slideUp 0.4s ease;
+                }
+                .success-header i {
+                    font-size: 60px;
+                    color: #28a745;
+                    margin-bottom: 20px;
+                }
+                .success-header h2 {
+                    color: #28a745;
+                    margin: 0 0 20px 0;
+                    font-size: 28px;
+                }
+                .success-body p {
+                    margin: 10px 0;
+                    color: #333;
+                    line-height: 1.6;
+                }
+                .contact-options {
+                    margin: 25px 0;
+                    padding: 20px;
+                    background: #f8f9fa;
+                    border-radius: 10px;
+                }
+                .contact-options h4 {
+                    margin: 0 0 15px 0;
+                    color: #555;
+                }
+                .contact-btn {
+                    display: inline-block;
+                    padding: 10px 20px;
+                    margin: 5px;
+                    border-radius: 25px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    color: white;
+                    font-size: 14px;
+                }
+                .btn-phone { background: #28a745; }
+                .btn-zalo { background: #0084ff; }
+                .btn-email { background: #007bff; }
+                .close-modal {
+                    background: #6c757d;
+                    color: white;
+                    border: none;
+                    padding: 12px 25px;
+                    border-radius: 25px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    margin-top: 20px;
+                }
+                .close-modal:hover {
+                    background: #5a6268;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { transform: translateY(50px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            `;
+            
+            document.head.appendChild(style);
+            document.body.appendChild(modal);
+            
+            // Tự động đóng sau 10 giây
+            setTimeout(() => {
+                closeSuccessModal();
+            }, 10000);
+        }
+
+        // Đóng modal thành công
+        function closeSuccessModal() {
+            const modal = document.querySelector('.success-modal');
+            if (modal) {
+                modal.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
+            }
+        }
+
         // Loading screen
         window.addEventListener('load', function() {
             const loadingScreen = document.getElementById('loadingScreen');
@@ -3151,45 +3768,396 @@
             statsObserver.observe(statsSection);
         }
 
-        // Form submission với hiệu ứng đẹp
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Helper function để hiển thị notifications
+        HTMLFormElement.prototype.showNotification = function(message, type = 'info') {
+            // Remove existing notifications
+            const existingNotifications = document.querySelectorAll('.form-notification');
+            existingNotifications.forEach(notif => notif.remove());
             
-            const submitBtn = this.querySelector('.submit-btn');
-            const originalText = submitBtn.innerHTML;
+            // Create new notification
+            const notification = document.createElement('div');
+            notification.className = `form-notification notification-${type}`;
+            notification.innerHTML = message;
+            notification.style.cssText = `
+                margin-top: 20px;
+                padding: 15px 20px;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+                border-left: 4px solid;
+                ${type === 'success' 
+                    ? 'background: #d4edda; color: #155724; border-color: #28a745;' 
+                    : 'background: #f8d7da; color: #721c24; border-color: #dc3545;'
+                }
+            `;
             
-            // Show loading state
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
-            submitBtn.disabled = true;
+            // Add notification after form
+            this.appendChild(notification);
             
-            // EmailJS integration
-            const formData = new FormData(this);
-            const templateParams = {
-                from_name: formData.get('name'),
-                from_email: formData.get('email'),
-                phone: formData.get('phone'),
-                company: formData.get('company'),
-                service: formData.get('service'),
-                message: formData.get('message')
+            // Auto remove after 8 seconds for success, longer for error
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.animation = 'slideOut 0.3s ease-in';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, type === 'success' ? 8000 : 15000);
+        };
+
+        // Helper function để hiển thị success modal
+        HTMLFormElement.prototype.showSuccessModal = function(contactData, method) {
+            // Remove existing modals
+            const existingModals = document.querySelectorAll('.success-modal');
+            existingModals.forEach(modal => modal.remove());
+            
+            // Create success modal
+            const modal = document.createElement('div');
+            modal.className = 'success-modal';
+            modal.style.cssText = `
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                z-index: 99999 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                background: rgba(0, 0, 0, 0.7) !important;
+                backdrop-filter: blur(8px) !important;
+                animation: modalFadeIn 0.4s ease-out !important;
+            `;
+            
+            modal.innerHTML = `
+                <div class="success-modal-content">
+                    <div class="success-header">
+                        <div class="success-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h3>🎉 Tin Nhắn Đã Được Gửi!</h3>
+                        <p>Cảm ơn <strong>${contactData.name}</strong> đã liên hệ với chúng tôi</p>
+                    </div>
+                    
+                    <div class="success-body">
+                        <div class="info-row">
+                            <i class="fas fa-user"></i>
+                            <span>Họ tên: <strong>${contactData.name}</strong></span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-envelope"></i>
+                            <span>Email: <strong>${contactData.email}</strong></span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-phone"></i>
+                            <span>Điện thoại: <strong>${contactData.phone}</strong></span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-briefcase"></i>
+                            <span>Dịch vụ: <strong>${contactData.service}</strong></span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-check-double"></i>
+                            <span>Trạng thái: <strong style="color: #28a745;">Đã gửi thành công</strong></span>
+                        </div>
+                    </div>
+                    
+                    <div class="success-footer">
+                        <p><i class="fas fa-clock"></i> Chúng tôi sẽ liên hệ lại trong vòng <strong>2 giờ</strong> (giờ hành chính)</p>
+                        <div class="contact-options">
+                            <a href="tel:0937739771" class="contact-btn phone">
+                                <i class="fas fa-phone"></i> Gọi Ngay
+                            </a>
+                            <a href="https://zalo.me/0937739771" target="_blank" class="contact-btn zalo">
+                                <i class="fab fa-facebook-messenger"></i> Chat Zalo
+                            </a>
+                        </div>
+                        <button class="close-modal" onclick="this.closest('.success-modal').remove()">
+                            <i class="fas fa-times"></i> Đóng
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Đảm bảo modal luôn hiển thị trên cùng
+            setTimeout(() => {
+                modal.style.display = 'flex';
+                modal.style.opacity = '1';
+            }, 50);
+            
+            // Click outside to close
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+            
+            // ESC key to close
+            const escHandler = function(e) {
+                if (e.key === 'Escape') {
+                    modal.remove();
+                    document.removeEventListener('keydown', escHandler);
+                }
             };
+            document.addEventListener('keydown', escHandler);
             
-            // Send email (replace with your EmailJS credentials)
-            emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
-                .then(() => {
-                    // Show success message
-                    alert('✅ Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong thời gian sớm nhất.');
-                    this.reset();
-                })
-                .catch(() => {
-                    // Fallback success message
-                    alert('✅ Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong thời gian sớm nhất.');
-                    this.reset();
-                })
-                .finally(() => {
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                });
-        });
+            // Auto close after 15 seconds (longer time)
+            setTimeout(() => {
+                if (modal.parentNode) {
+                    modal.style.animation = 'modalFadeOut 0.3s ease-in';
+                    setTimeout(() => modal.remove(), 300);
+                }
+            }, 15000);
+        };
+
+        // Add CSS for notification animations
+        const notificationStyles = document.createElement('style');
+        notificationStyles.textContent = `
+            @keyframes slideIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            @keyframes slideOut {
+                from { opacity: 1; transform: translateY(0); }
+                to { opacity: 0; transform: translateY(-10px); }
+            }
+            
+            @keyframes modalFadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            @keyframes modalFadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+            
+            .form-notification a {
+                text-decoration: none;
+                margin: 0 5px;
+            }
+            
+            .form-notification a:hover {
+                text-decoration: underline;
+            }
+            
+            /* Success Modal Styles */
+            .success-modal {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                z-index: 99999 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                background: rgba(0, 0, 0, 0.7) !important;
+                backdrop-filter: blur(8px) !important;
+                animation: modalFadeIn 0.4s ease-out !important;
+            }
+            
+            .success-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: transparent;
+            }
+            
+            .success-modal-content {
+                position: relative !important;
+                background: white !important;
+                border-radius: 20px !important;
+                max-width: 500px !important;
+                width: 90% !important;
+                max-height: 90vh !important;
+                overflow-y: auto !important;
+                box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4) !important;
+                animation: modalSlideIn 0.4s ease-out !important;
+                z-index: 100000 !important;
+            }
+            
+            @keyframes modalSlideIn {
+                from { transform: scale(0.9) translateY(-20px); opacity: 0; }
+                to { transform: scale(1) translateY(0); opacity: 1; }
+            }
+            
+            .success-header {
+                text-align: center;
+                padding: 30px 20px 20px;
+                background: linear-gradient(135deg, #28a745, #20c997);
+                color: white !important;
+                border-radius: 20px 20px 0 0;
+            }
+            
+            .success-icon {
+                font-size: 3.5rem !important;
+                margin-bottom: 15px;
+                color: white !important;
+                animation: bounceIn 0.6s ease-out 0.3s both;
+            }
+            
+            @keyframes bounceIn {
+                from { transform: scale(0); opacity: 0; }
+                50% { transform: scale(1.2); }
+                to { transform: scale(1); opacity: 1; }
+            }
+            
+            .success-header h3 {
+                margin: 0 0 10px !important;
+                font-size: 1.6rem !important;
+                font-weight: 700 !important;
+                color: white !important;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+            
+            .success-header p {
+                margin: 0 !important;
+                opacity: 0.95 !important;
+                font-size: 1.1rem !important;
+                color: white !important;
+            }
+            
+            .success-body {
+                padding: 25px !important;
+                background: white !important;
+            }
+            
+            .info-row {
+                display: flex !important;
+                align-items: center !important;
+                margin-bottom: 15px !important;
+                padding: 12px !important;
+                background: #f8f9fa !important;
+                border-radius: 12px !important;
+                border-left: 4px solid #28a745 !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+            }
+            
+            .info-row i {
+                margin-right: 15px !important;
+                color: #28a745 !important;
+                width: 20px !important;
+                text-align: center !important;
+                font-size: 1.1rem !important;
+            }
+            
+            .info-row span {
+                flex: 1 !important;
+                font-size: 1rem !important;
+                color: #333 !important;
+            }
+            
+            .success-footer {
+                padding: 25px !important;
+                border-top: 1px solid #eee !important;
+                text-align: center !important;
+                background: white !important;
+                border-radius: 0 0 20px 20px;
+            }
+            
+            .success-footer p {
+                margin: 0 0 20px !important;
+                padding: 15px !important;
+                background: #e8f5e8 !important;
+                color: #155724 !important;
+                border-radius: 10px !important;
+                font-size: 1rem !important;
+                font-weight: 500 !important;
+                border: 1px solid #c3e6cb !important;
+            }
+            
+            .contact-options {
+                display: flex !important;
+                gap: 12px !important;
+                justify-content: center !important;
+                margin-bottom: 20px !important;
+                flex-wrap: wrap !important;
+            }
+            
+            .contact-btn {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                padding: 14px 24px !important;
+                border-radius: 25px !important;
+                text-decoration: none !important;
+                font-weight: 600 !important;
+                font-size: 1rem !important;
+                transition: all 0.3s ease !important;
+                min-width: 140px !important;
+                justify-content: center !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+            }
+            
+            .contact-btn.phone {
+                background: #28a745 !important;
+                color: white !important;
+                border: 2px solid #28a745 !important;
+            }
+            
+            .contact-btn.phone:hover {
+                background: #218838 !important;
+                border-color: #1e7e34 !important;
+                transform: translateY(-2px) !important;
+                box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4) !important;
+            }
+            
+            .contact-btn.zalo {
+                background: #0088ff !important;
+                color: white !important;
+                border: 2px solid #0088ff !important;
+            }
+            
+            .contact-btn.zalo:hover {
+                background: #0066cc !important;
+                border-color: #0056b3 !important;
+                transform: translateY(-2px) !important;
+                box-shadow: 0 6px 20px rgba(0, 136, 255, 0.4) !important;
+            }
+            
+            .close-modal {
+                background: #6c757d !important;
+                color: white !important;
+                border: none !important;
+                padding: 12px 24px !important;
+                border-radius: 20px !important;
+                cursor: pointer !important;
+                font-size: 1rem !important;
+                font-weight: 500 !important;
+                transition: all 0.3s ease !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+            }
+            
+            .close-modal:hover {
+                background: #5a6268 !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 6px 16px rgba(0,0,0,0.2) !important;
+            }
+            
+            /* Responsive */
+            @media (max-width: 768px) {
+                .success-modal-content {
+                    width: 95%;
+                    margin: 10px;
+                }
+                
+                .contact-options {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+                
+                .contact-btn {
+                    width: 100%;
+                    justify-content: center;
+                }
+            }
+        `;
+        document.head.appendChild(notificationStyles);
 
         // Parallax effect cho hero section
         window.addEventListener('scroll', function() {
@@ -3491,6 +4459,34 @@
             }
         `;
         document.head.appendChild(style);
+
+        // Service Modal Functions
+        function openServiceModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+                
+                // Animation
+                setTimeout(() => {
+                    modal.querySelector('.modal-content').style.transform = 'scale(1)';
+                    modal.querySelector('.modal-content').style.opacity = '1';
+                }, 10);
+            }
+        }
+
+        // Initialize all effects when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                initializeEffects();
+                
+                // Hide loading screen
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.classList.add('hidden');
+                }
+            }, 1000);
+        });
     </script>
 </body>
 </html>
